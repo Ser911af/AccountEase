@@ -89,7 +89,7 @@ if uploaded_file:
             # Generar informe con Hugging Face
             st.markdown("### Informe generado automáticamente:")
             hf_token = st.secrets["general"]["HUGGINGFACEHUB_API_TOKEN"]
-            generator = pipeline("text-generation", model="gpt-neo-125M", use_auth_token=hf_token)
+            generator = pipeline("text-generation", model="meta-llama/Llama-3.3-70B-Instruct", use_auth_token=hf_token)
 
             resumen_datos = tabla_df.to_string(index=False)
             prompt = (

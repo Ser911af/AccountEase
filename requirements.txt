@@ -2,4 +2,4 @@ pandas
 streamlit
 matplotlib
 openpyxl
-groq-sdk
+groq

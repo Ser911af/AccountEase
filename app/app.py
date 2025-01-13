@@ -126,20 +126,15 @@ if uploaded_file:
                 resumen_datos = tabla_df.to_string(index=False)
                 prompt = (
                     f"Genera un informe analítico basado en la siguiente tabla:\n{resumen_datos}\n\n"
-                    f"Eres un asistente experto en análisis de datos financieros. A continuación, se te proporciona una tabla con datos consolidados de ingresos por tipo de documento y meses. Tu tarea es analizar esta tabla y generar un informe detallado con las siguientes observaciones:
-
-1. Identifica los tipos de documentos que generaron los mayores ingresos totales.
-2. Analiza la suma total mensual y resalta cuáles son los meses con los mayores ingresos.
-3. Incluye observaciones clave sobre patrones notables, como tendencias mensuales o distribuciones desbalanceadas entre los tipos de documento.
-4. Presenta el análisis de manera clara y estructurada, utilizando listas o párrafos según sea necesario.
-
-Tabla de datos:
-{tabla}
-
-Nota: En la tabla, la columna "Tipo Doc" indica el tipo de documento, las columnas "Meses" representan los ingresos por mes, y "Total Anual" contiene el total de ingresos anuales para cada fila.
-
-Por favor, genera un informe detallado con base en esta información.
-Incluye observaciones clave, porcentajes destacados y análisis general de las cifras."
+                    f"Eres un asistente experto en análisis de datos financieros. A continuación, se te proporciona una tabla con datos consolidados de ingresos por tipo de documento y meses. Tu tarea es analizar esta tabla y generar un informe detallado con las siguientes observaciones:\n\n"
+                    "1. Identifica los tipos de documentos que generaron los mayores ingresos totales.\n"
+                    "2. Analiza la suma total mensual y resalta cuáles son los meses con los mayores ingresos.\n"
+                    "3. Incluye observaciones clave sobre patrones notables, como tendencias mensuales o distribuciones desbalanceadas entre los tipos de documento.\n"
+                    "4. Presenta el análisis de manera clara y estructurada, utilizando listas o párrafos según sea necesario.\n\n"
+                    "Tabla de datos:\n"
+                    "{tabla}\n\n"
+                    "Nota: En la tabla, la columna \"Tipo Doc\" indica el tipo de documento, las columnas \"Meses\" representan los ingresos por mes, y \"Total Anual\" contiene el total de ingresos anuales para cada fila.\n\n"
+                    "Por favor, genera un informe detallado con base en esta información.\n"
                 )
 
                 with st.spinner("Generando el informe, por favor espera..."):

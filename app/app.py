@@ -3,7 +3,7 @@ import streamlit as st
 import matplotlib.pyplot as plt
 from io import BytesIO
 from matplotlib.backends.backend_pdf import PdfPages
-from transformers import pipeline
+from groq import Groq
 
 # Título de la aplicación
 st.title("DIAN Report Analyzer")
@@ -23,7 +23,7 @@ if uploaded_file:
         if missing_columns:
             st.error(f"El archivo no contiene las columnas requeridas: {', '.join(missing_columns)}")
         else:
-            # Convertir 'Fecha Emisión' a formato de fecha
+            # Convertir y limpiar datos
             df["Fecha Emisión"] = pd.to_datetime(df["Fecha Emisión"], format='%d-%m-%Y', errors="coerce")
             df["Total"] = pd.to_numeric(df["Total"], errors='coerce')
             df["IVA"] = pd.to_numeric(df["IVA"], errors='coerce')
@@ -61,7 +61,7 @@ if uploaded_file:
             st.markdown("### Tabla consolidada:")
             st.dataframe(tabla_df)
 
-            # Generar gráficos de barras
+            # Crear gráficos de barras
             st.markdown("### Gráficos de barras: porcentaje relativo del valor por tipo de documento")
             all_figures = []
             for tipo_doc in tipo_documentos:
@@ -86,20 +86,64 @@ if uploaded_file:
                 st.pyplot(fig)
                 all_figures.append(fig)
 
-            # Generar informe con Hugging Face
-            st.markdown("### Informe generado automáticamente:")
-            hf_token = st.secrets["general"]["HUGGINGFACEHUB_API_TOKEN"]
-            generator = pipeline("text-generation", model="meta-llama/Llama-3.3-70B-Instruct", use_auth_token=hf_token)
+            # Guardar gráficos en PDF
+            def crear_pdf(figures):
+                pdf_output = BytesIO()
+                with PdfPages(pdf_output) as pdf:
+                    for fig in figures:
+                        pdf.savefig(fig)
+                        plt.close(fig)
+                return pdf_output.getvalue()
 
-            resumen_datos = tabla_df.to_string(index=False)
-            prompt = (
-                f"Genera un informe analítico basado en la siguiente tabla:\n{resumen_datos}\n\n"
-                f"Incluye observaciones clave, porcentajes destacados y análisis general de las cifras."
+            pdf_data = crear_pdf(all_figures)
+            st.download_button(
+                label="Descargar gráficos en PDF",
+                data=pdf_data,
+                file_name="gráficos_dian.pdf",
+                mime="application/pdf"
             )
 
-            with st.spinner("Generando el informe, por favor espera..."):
-                informe = generator(prompt, max_length=300, num_return_sequences=1)
-                st.write(informe[0]["generated_text"])
+            # Generar archivo Excel
+            @st.cache_data
+            def convertir_a_excel(dataframe):
+                output = BytesIO()
+                with pd.ExcelWriter(output, engine="openpyxl") as writer:
+                    dataframe.to_excel(writer, index=False, sheet_name="Resultados")
+                return output.getvalue()
+
+            excel_data = convertir_a_excel(tabla_df)
+            st.download_button(
+                label="Descargar tabla consolidada en Excel",
+                data=excel_data,
+                file_name="analisis_dian.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+
+            # Generar informe con Groq
+            st.markdown("### Informe generado automáticamente:")
+            try:
+                client = Groq()
+                resumen_datos = tabla_df.to_string(index=False)
+                prompt = (
+                    f"Genera un informe analítico basado en la siguiente tabla:\n{resumen_datos}\n\n"
+                    f"Incluye observaciones clave, porcentajes destacados y análisis general de las cifras."
+                )
+
+                with st.spinner("Generando el informe, por favor espera..."):
+                    completion = client.chat.completions.create(
+                        model="llama-3.3-70b-versatile",
+                        messages=[{"role": "user", "content": prompt}],
+                        temperature=1,
+                        max_tokens=1024,
+                        top_p=1,
+                        stream=True,
+                    )
+                    informe = ""
+                    for chunk in completion:
+                        informe += chunk.choices[0].delta.content or ""
+                    st.write(informe)
+            except Exception as e:
+                st.error(f"Error generando el informe: {e}")
 
     except Exception as e:
         st.error(f"Error procesando el archivo: {e}")

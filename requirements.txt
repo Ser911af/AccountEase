@@ -3,3 +3,4 @@ streamlit
 matplotlib
 openpyxl
 groq
+langchain-groq

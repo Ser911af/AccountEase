@@ -1,72 +1,81 @@
 import pandas as pd
 import streamlit as st
-import matplotlib.pyplot as plt
-from io import BytesIO
-from matplotlib.backends.backend_pdf import PdfPages
+from langchain_groq import ChatGroq
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import JsonOutputParser
 
-# Título de la aplicación
-st.title("Análisis Financiero de Cuentas Contables")
-st.subheader("Carga tu archivo de cuentas y obtén análisis detallados")
+# Inicializar LLM con Groq
+llm = ChatGroq(
+    model_name="llama-3.3-70b-versatile",
+    temperature=0.7
+)
 
-# Subida del archivo
+# Función para cargar y preprocesar datos
+def cargar_datos(archivo):
+    try:
+        df = pd.read_excel(archivo, skiprows=7)
+        for col in ["Saldo inicial", "Saldo final"]:
+            df[col] = (
+                df[col]
+                .replace({',': '', '.': ''}, regex=True)
+                .str.replace('.', '', regex=False)
+                .astype(float)
+            )
+        return df
+    except Exception as e:
+        st.error(f"Error al cargar los datos: {e}")
+        return None
+
+# Función para analizar las clases principales
+def analizar_variacion(df):
+    clases_principales = df[df["Código cuenta contable"].str.startswith(tuple(map(str, range(1, 8))))]
+    resumen = (
+        clases_principales.groupby("Código cuenta contable")[["Saldo inicial", "Saldo final"]]
+        .sum()
+        .reset_index()
+    )
+    resumen["Variación"] = resumen["Saldo final"] - resumen["Saldo inicial"]
+    return resumen
+
+# Función para generar un informe con LangChain y Groq
+def generar_informe(resumen):
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", """Analiza la tabla proporcionada y genera un informe con las siguientes secciones:
+        1. Resumen general de las variaciones.
+        2. Clases con mayores aumentos o disminuciones en el saldo.
+        3. Observaciones clave sobre patrones o tendencias."""),
+        ("user", f"Tabla de datos:\n{resumen.to_string(index=False)}")
+    ])
+    
+    parser = JsonOutputParser(pydantic_object={
+        "type": "object",
+        "properties": {
+            "resumen_general": {"type": "string"},
+            "clases_relevantes": {"type": "array", "items": {"type": "string"}},
+            "observaciones_clave": {"type": "string"}
+        }
+    })
+    
+    chain = prompt | llm | parser
+    result = chain.invoke({})
+    return result
+
+# Interfaz con Streamlit
+st.title("Análisis de Variaciones en Cuentas Contables")
 uploaded_file = st.file_uploader("Sube tu archivo Excel", type=["xlsx"])
 
 if uploaded_file:
-    try:
-        # Leer el archivo Excel desde la fila 8
-        df = pd.read_excel(uploaded_file, skiprows=7)
+    datos = cargar_datos(uploaded_file)
+    if datos is not None:
+        st.markdown("### Datos cargados:")
+        st.dataframe(datos.head())
 
-        # Validar columnas necesarias
-        required_columns = [
-            "Código cuenta contable", "Nombre cuenta contable", "Identificación",
-            "Sucursal", "Nombre tercero", "Saldo inicial", "Movimiento débito",
-            "Movimiento crédito", "Saldo final"
-        ]
-        missing_columns = [col for col in required_columns if col not in df.columns]
-        if missing_columns:
-            st.error(f"El archivo no contiene las columnas requeridas: {', '.join(missing_columns)}")
-        else:
-            # Limpieza y conversión de datos
-            for col in ["Saldo inicial", "Movimiento débito", "Movimiento crédito", "Saldo final"]:
-                df[col] = (
-                    df[col]
-                    .replace({',': '', '.': ''}, regex=True)
-                    .str.replace('.', '', regex=False)
-                    .astype(float)
-                )
+        resumen_variacion = analizar_variacion(datos)
+        st.markdown("### Resumen de variaciones por clase:")
+        st.dataframe(resumen_variacion)
 
-            # Crear columnas derivadas
-            df["Movimiento neto"] = df["Movimiento débito"] - df["Movimiento crédito"]
-            df["Cambio saldo"] = df["Saldo final"] - df["Saldo inicial"]
-
-            # Mostrar los primeros datos
-            st.markdown("### Datos cargados:")
-            st.dataframe(df.head())
-
-            # Agrupaciones y Resúmenes
-            st.markdown("### Resumen por Niveles:")
-            niveles = ["Clase", "Grupo", "Cuenta", "Subcuenta"]
-            for nivel in niveles:
-                if nivel in df.columns:
-                    resumen = (
-                        df.groupby(nivel)[["Saldo inicial", "Movimiento débito", "Movimiento crédito", "Saldo final"]]
-                        .sum()
-                        .reset_index()
-                    )
-                    st.markdown(f"#### Resumen por {nivel}:")
-                    st.dataframe(resumen)
-
-            # Generar gráficos
-            st.markdown("### Gráficos:")
-            fig, ax = plt.subplots(figsize=(10, 6))
-            resumen_nivel = df.groupby("Clase")["Saldo final"].sum().sort_values(ascending=False)
-            ax.bar(resumen_nivel.index, resumen_nivel.values, color="skyblue")
-            ax.set_title("Saldo final por Clase")
-            ax.set_ylabel("Saldo final")
-            ax.set_xlabel("Clase")
-            st.pyplot(fig)
-
-    except Exception as e:
-        st.error(f"Error procesando el archivo: {e}")
-else:
-    st.write("Por favor, sube un archivo Excel para comenzar.")
+        if st.button("Generar Informe"):
+            with st.spinner("Generando informe..."):
+                informe = generar_informe(resumen_variacion)
+                st.markdown("### Informe generado:")
+                st.json(informe)

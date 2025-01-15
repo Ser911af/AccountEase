@@ -46,19 +46,45 @@ def analizar_clases(df):
     resumen["Variación Total"] = resumen["Variación Total"].round(0).astype(int)
 
     return resumen
+
+# Función para analizar ponderación de subcuentas en la cuenta 1305
+def analizar_ponderacion_subcuentas(df):
+    # Filtrar las subcuentas con código que empiece con 1305
+    subcuentas = df[df["Código cuenta contable"].str.startswith("1305")]
     
-# Generar informe con Groq
-def generar_informe(tabla_df):
+    # Encontrar el saldo inicial de la cuenta principal 1305
+    cuenta_principal = df[df["Código cuenta contable"] == "1305"]
+    saldo_inicial_cuenta_principal = cuenta_principal["Saldo inicial"].sum()
+
+    # Calcular el peso relativo de cada subcuenta
+    subcuentas["Peso relativo"] = (subcuentas["Saldo inicial"] / saldo_inicial_cuenta_principal) * 100
+
+    # Redondear el peso relativo
+    subcuentas["Peso relativo"] = subcuentas["Peso relativo"].round(2)
+
+    return subcuentas[["Código cuenta contable", "Nombre cuenta contable", "Saldo inicial", "Peso relativo"]]
+
+# Generar informe con Groq (incluyendo el análisis de ponderación de subcuentas)
+def generar_informe(resumen_variacion, ponderacion_subcuentas):
     st.markdown("### Informe generado automáticamente:")
     try:
         client = Groq()
-        resumen_datos = tabla_df.to_string(index=False)
+
+        # Resumen de variaciones por clase
+        resumen_variacion_datos = resumen_variacion.to_string(index=False)
+
+        # Resumen de ponderación de subcuentas
+        ponderacion_subcuentas_datos = ponderacion_subcuentas.to_string(index=False)
+
+        # Crear el prompt con los análisis de variaciones y ponderación
         prompt = (
-            f"Eres un asistente financiero. Aquí tienes un resumen de clases con variaciones totales y porcentuales:\n{resumen_datos}\n\n"
+            f"Eres un asistente financiero. Aquí tienes un resumen de las variaciones por clase y la ponderación de las subcuentas en la cuenta 1305:\n"
+            f"Variaciones por clase:\n{resumen_variacion_datos}\n\n"
+            f"Ponderación de subcuentas en la cuenta 1305:\n{ponderacion_subcuentas_datos}\n\n"
             "Tu tarea es generar un informe que destaque lo siguiente:\n"
             "1. Resumen general de las variaciones totales y porcentuales de las clases.\n"
-            "2. Listado de las clases con mayor aumento o disminución.\n"
-           
+            "2. Ponderación de las subcuentas más importantes dentro de la cuenta 1305.\n"
+            "3. Análisis de cualquier tendencia destacada o desviación significativa.\n"
         )
 
         with st.spinner("Generando el informe, por favor espera..."):
@@ -87,9 +113,16 @@ if uploaded_file:
         st.markdown("### Datos cargados:")
         st.dataframe(datos.head())
 
+        # Análisis de variaciones por clase
         resumen_variacion = analizar_clases(datos)
         st.markdown("### Resumen de variaciones por clase:")
         st.dataframe(resumen_variacion)
 
+        # Análisis de ponderación de subcuentas en la cuenta 1305
+        ponderacion_subcuentas = analizar_ponderacion_subcuentas(datos)
+        st.markdown("### Ponderación de subcuentas en la cuenta 1305:")
+        st.dataframe(ponderacion_subcuentas)
+
+        # Botón para generar el informe
         if st.button("Generar Informe"):
-            generar_informe(resumen_variacion)
+            generar_informe(resumen_variacion, ponderacion_subcuentas)

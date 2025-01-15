@@ -1,9 +1,9 @@
 import pandas as pd
 import streamlit as st
-import json
 from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
+import json
 
 # Inicializar LLM con Groq
 llm = ChatGroq(
@@ -16,7 +16,7 @@ def cargar_y_limpiar_datos(archivo):
     try:
         # Leer el archivo Excel desde la fila 8
         df = pd.read_excel(archivo, skiprows=7, usecols="A:K")
-        
+
         # Seleccionar solo columnas relevantes
         columnas_relevantes = ["Nivel", "Transaccional", "Código cuenta contable", "Nombre cuenta contable", 
                                "Identificación", "Saldo inicial", "Movimiento débito", "Movimiento crédito", "Saldo final"]
@@ -26,7 +26,7 @@ def cargar_y_limpiar_datos(archivo):
         columnas_a_convertir = ["Nivel", "Transaccional", "Código cuenta contable", "Nombre cuenta contable", "Identificación"]
         for columna in columnas_a_convertir:
             df[columna] = df[columna].astype(str)
-        
+
         # Asegurar que las columnas numéricas estén correctamente formateadas
         columnas_numericas = ["Saldo inicial", "Movimiento débito", "Movimiento crédito", "Saldo final"]
         for columna in columnas_numericas:
@@ -50,22 +50,19 @@ def analizar_clases(df):
 
 # Función para generar un informe con LangChain y Groq
 def generar_informe(resumen):
-    # Convertir el resumen a texto
     resumen_texto = "Resumen de variación por clase:\n\n"
     for index, row in resumen.iterrows():
         resumen_texto += f"Clase: {row['Nombre cuenta contable']} (Código: {row['Código cuenta contable']})\n"
         resumen_texto += f"Saldo Inicial: {row['Saldo inicial']:.2f} | Saldo Final: {row['Saldo final']:.2f} | Variación: {row['Variación']:.2f}\n\n"
-    
-    # Crear el prompt
+
     prompt = ChatPromptTemplate.from_messages([
         ("system", """Analiza la tabla proporcionada y genera un informe con las siguientes secciones:
         1. Resumen general de las variaciones.
         2. Clases con mayores aumentos o disminuciones en el saldo.
-        3. Observaciones clave sobre patrones o tendencias."""), 
+        3. Observaciones clave sobre patrones o tendencias."""),
         ("user", resumen_texto)
     ])
-    
-    # Definir el formato JSON esperado
+
     parser = JsonOutputParser(pydantic_object={
         "type": "object",
         "properties": {
@@ -74,16 +71,17 @@ def generar_informe(resumen):
             "observaciones_clave": {"type": "string"}
         }
     })
-    
-    # Crear el pipeline
+
     chain = prompt | llm | parser
 
     try:
-        # Invocar el modelo
         result = chain.invoke({})
         return result
     except Exception as e:
         st.error(f"Error al generar el informe: {e}")
+        # Agregar depuración para registrar el texto bruto del LLM
+        raw_llm_output = chain.run_only_llm({})
+        st.error(f"Salida LLM sin procesar: {raw_llm_output}")
         return None
 
 # Interfaz con Streamlit

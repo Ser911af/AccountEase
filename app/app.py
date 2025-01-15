@@ -49,13 +49,16 @@ def analizar_clases(df):
 
 # Función para generar un informe con LangChain y Groq
 def generar_informe(resumen):
+    # Convertir el resumen a un formato de texto legible para el modelo
+    resumen_texto = resumen.to_string(index=False)
+
     # Crear el prompt para LangChain
     prompt = ChatPromptTemplate.from_messages([
         ("system", """Analiza la tabla proporcionada y genera un informe con las siguientes secciones:
         1. Resumen general de las variaciones.
         2. Clases con mayores aumentos o disminuciones en el saldo.
         3. Observaciones clave sobre patrones o tendencias."""),
-        ("user", f"Tabla de datos:\n{resumen.to_string(index=False)}")
+        ("user", f"Tabla de datos:\n{resumen_texto}")
     ])
     
     # Configurar el parser de JSON
@@ -72,8 +75,12 @@ def generar_informe(resumen):
     chain = prompt | llm | parser
     
     # Generar el resultado
-    result = chain.invoke({})
-    return result
+    try:
+        result = chain.invoke({})
+        return result
+    except Exception as e:
+        st.error(f"Error al generar el informe: {e}")
+        return None
 
 # Interfaz con Streamlit
 st.title("Análisis de Variaciones en Clases Contables")
@@ -94,6 +101,7 @@ if uploaded_file:
         if st.button("Generar Informe"):
             with st.spinner("Generando informe..."):
                 informe = generar_informe(resumen_clases)
-                st.markdown("### Informe generado:")
-                st.json(informe)
+                if informe:
+                    st.markdown("### Informe generado:")
+                    st.json(informe)
 

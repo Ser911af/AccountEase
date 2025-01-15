@@ -58,7 +58,7 @@ def generar_informe(tabla_df):
             "Tu tarea es generar un informe que destaque lo siguiente:\n"
             "1. Resumen general de las variaciones totales y porcentuales de las clases.\n"
             "2. Listado de las clases con mayor aumento o disminución.\n"
-            "3. Observaciones clave relacionadas con las variaciones, sin conclusiones adicionales.\n"
+           
         )
 
         with st.spinner("Generando el informe, por favor espera..."):

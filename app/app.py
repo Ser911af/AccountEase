@@ -1,15 +1,6 @@
 import pandas as pd
 import streamlit as st
-import json
-from langchain_groq import ChatGroq
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.output_parsers import JsonOutputParser
-
-# Inicializar el modelo Groq
-llm = ChatGroq(
-    model_name="llama-3.3-70b-versatile",
-    temperature=0.7
-)
+from groq import Groq  # Asegúrate de que esta librería esté instalada
 
 # Función para cargar y limpiar datos
 def cargar_y_limpiar_datos(archivo):
@@ -37,7 +28,7 @@ def cargar_y_limpiar_datos(archivo):
         st.error(f"Error al cargar y limpiar los datos: {e}")
         return None
 
-# Función para analizar variación por clase
+# Función para analizar variaciones por clase
 def analizar_clases(df):
     clases = df[df["Nivel"] == "Clase"]
     resumen = (
@@ -45,43 +36,39 @@ def analizar_clases(df):
         .sum()
         .reset_index()
     )
-    resumen["Variación"] = resumen["Saldo final"] - resumen["Saldo inicial"]
+    resumen["Variación Total"] = resumen["Saldo final"] - resumen["Saldo inicial"]
+    resumen["Variación %"] = (resumen["Variación Total"] / resumen["Saldo inicial"].replace(0, pd.NA)) * 100
     return resumen
 
-# Función para generar un informe con LangChain y Groq
-def generar_informe(resumen):
-    resumen_texto = "Resumen de variación por clase:\n\n"
-    for _, row in resumen.iterrows():
-        resumen_texto += f"Clase: {row['Nombre cuenta contable']} (Código: {row['Código cuenta contable']})\n"
-        resumen_texto += f"Saldo Inicial: {row['Saldo inicial']:.2f} | Saldo Final: {row['Saldo final']:.2f} | Variación: {row['Variación']:.2f}\n\n"
-
-    # Crear el prompt y definir el parser
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", """Analiza la tabla proporcionada y genera un informe con las siguientes secciones:
-        1. Resumen general de las variaciones.
-        2. Clases con mayores aumentos o disminuciones en el saldo.
-        3. Observaciones clave sobre patrones o tendencias."""),
-        ("user", resumen_texto)
-    ])
-
-    parser = JsonOutputParser(pydantic_object={
-        "type": "object",
-        "properties": {
-            "resumen_general": {"type": "string"},
-            "clases_relevantes": {"type": "array", "items": {"type": "string"}},
-            "observaciones_clave": {"type": "string"}
-        }
-    })
-
-    # Crear la cadena y generar el resultado
-    chain = prompt | llm | parser
-
+# Generar informe con Groq
+def generar_informe(tabla_df):
+    st.markdown("### Informe generado automáticamente:")
     try:
-        result = chain.invoke({"input": resumen_texto})
-        return result
+        client = Groq()
+        resumen_datos = tabla_df.to_string(index=False)
+        prompt = (
+            f"Eres un asistente financiero. Aquí tienes un resumen de clases con variaciones totales y porcentuales:\n{resumen_datos}\n\n"
+            "Tu tarea es generar un informe que destaque lo siguiente:\n"
+            "1. Resumen general de las variaciones totales y porcentuales de las clases.\n"
+            "2. Listado de las clases con mayor aumento o disminución.\n"
+            "3. Observaciones clave relacionadas con las variaciones, sin conclusiones adicionales.\n"
+        )
+
+        with st.spinner("Generando el informe, por favor espera..."):
+            completion = client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=1,
+                max_tokens=1024,
+                top_p=1,
+                stream=True,
+            )
+            informe = ""
+            for chunk in completion:
+                informe += chunk.choices[0].delta.content or ""
+            st.write(informe)
     except Exception as e:
-        st.error(f"Error al generar el informe: {e}")
-        return None
+        st.error(f"Error generando el informe: {e}")
 
 # Interfaz con Streamlit
 st.title("Análisis de Variaciones en Cuentas Contables")
@@ -98,8 +85,4 @@ if uploaded_file:
         st.dataframe(resumen_variacion)
 
         if st.button("Generar Informe"):
-            with st.spinner("Generando informe..."):
-                informe = generar_informe(resumen_variacion)
-                if informe:
-                    st.markdown("### Informe generado:")
-                    st.json(informe)
+            generar_informe(resumen_variacion)

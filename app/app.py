@@ -10,7 +10,7 @@ llm = ChatGroq(
     temperature=0.7
 )
 
-# Función para cargar y limpiar los datos
+# Función para cargar y limpiar datos
 def cargar_y_limpiar_datos(archivo):
     try:
         # Leer el archivo Excel desde la fila 8
@@ -47,23 +47,22 @@ def analizar_clases(df):
     resumen["Variación"] = resumen["Saldo final"] - resumen["Saldo inicial"]
     return resumen
 
-# Función para generar el informe con LangChain y Groq
+# Función para generar un informe con LangChain y Groq
 def generar_informe(resumen):
-    # Convertir el resumen a un formato de texto adecuado
-    resumen_texto = ""
-    for _, row in resumen.iterrows():
-        resumen_texto += f"Cuenta: {row['Nombre cuenta contable']}, Código: {row['Código cuenta contable']}, Saldo Inicial: {row['Saldo inicial']}, Saldo Final: {row['Saldo final']}, Variación: {row['Variación']}\n"
-
-    # Crear el prompt con el texto generado
+    # Convertir el resumen a texto en lugar de pasar un DataFrame
+    resumen_texto = "Resumen de variación por clase:\n\n"
+    for index, row in resumen.iterrows():
+        resumen_texto += f"Clase: {row['Nombre cuenta contable']} (Código: {row['Código cuenta contable']})\n"
+        resumen_texto += f"Saldo Inicial: {row['Saldo inicial']:.2f} | Saldo Final: {row['Saldo final']:.2f} | Variación: {row['Variación']:.2f}\n\n"
+    
     prompt = ChatPromptTemplate.from_messages([
         ("system", """Analiza la tabla proporcionada y genera un informe con las siguientes secciones:
         1. Resumen general de las variaciones.
         2. Clases con mayores aumentos o disminuciones en el saldo.
         3. Observaciones clave sobre patrones o tendencias."""),
-        ("user", f"Tabla de datos:\n{resumen_texto}")
+        ("user", resumen_texto)
     ])
     
-    # Configurar el analizador de salida
     parser = JsonOutputParser(pydantic_object={
         "type": "object",
         "properties": {
@@ -73,13 +72,9 @@ def generar_informe(resumen):
         }
     })
     
-    # Crear y ejecutar la cadena de procesamiento
     chain = prompt | llm | parser
     result = chain.invoke({})
-    
-    # Retornar el informe generado
     return result
-
 
 # Interfaz con Streamlit
 st.title("Análisis de Variaciones en Cuentas Contables")

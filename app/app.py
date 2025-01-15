@@ -55,7 +55,7 @@ def generar_informe(resumen):
         resumen_texto += f"Clase: {row['Nombre cuenta contable']} (Código: {row['Código cuenta contable']})\n"
         resumen_texto += f"Saldo Inicial: {row['Saldo inicial']:.2f} | Saldo Final: {row['Saldo final']:.2f} | Variación: {row['Variación']:.2f}\n\n"
     
-    prompt = ChatPromptTemplate.from_messages([
+    prompt = ChatPromptTemplate.from_messages([ 
         ("system", """Analiza la tabla proporcionada y genera un informe con las siguientes secciones:
         1. Resumen general de las variaciones.
         2. Clases con mayores aumentos o disminuciones en el saldo.

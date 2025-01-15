@@ -14,6 +14,7 @@ llm = ChatGroq(
 def cargar_datos(archivo):
     try:
         df = pd.read_excel(archivo, skiprows=7)
+        # Procesar columnas numéricas
         for col in ["Saldo inicial", "Saldo final"]:
             df[col] = (
                 df[col]
@@ -26,11 +27,11 @@ def cargar_datos(archivo):
         st.error(f"Error al cargar los datos: {e}")
         return None
 
-# Función para analizar las clases principales
-def analizar_variacion(df):
-    clases_principales = df[df["Código cuenta contable"].str.startswith(tuple(map(str, range(1, 8))))]
+# Función para analizar variación por clase
+def analizar_clases(df):
+    clases = df[df["Nivel"] == "Clase"]
     resumen = (
-        clases_principales.groupby("Código cuenta contable")[["Saldo inicial", "Saldo final"]]
+        clases.groupby(["Código cuenta contable", "Nombre cuenta contable"])[["Saldo inicial", "Saldo final"]]
         .sum()
         .reset_index()
     )
@@ -39,6 +40,7 @@ def analizar_variacion(df):
 
 # Función para generar un informe con LangChain y Groq
 def generar_informe(resumen):
+    # Crear el prompt para LangChain
     prompt = ChatPromptTemplate.from_messages([
         ("system", """Analiza la tabla proporcionada y genera un informe con las siguientes secciones:
         1. Resumen general de las variaciones.
@@ -47,6 +49,7 @@ def generar_informe(resumen):
         ("user", f"Tabla de datos:\n{resumen.to_string(index=False)}")
     ])
     
+    # Configurar el parser de JSON
     parser = JsonOutputParser(pydantic_object={
         "type": "object",
         "properties": {
@@ -56,12 +59,15 @@ def generar_informe(resumen):
         }
     })
     
+    # Crear la cadena con el LLM y el parser
     chain = prompt | llm | parser
+    
+    # Generar el resultado
     result = chain.invoke({})
     return result
 
 # Interfaz con Streamlit
-st.title("Análisis de Variaciones en Cuentas Contables")
+st.title("Análisis de Variaciones en Clases Contables")
 uploaded_file = st.file_uploader("Sube tu archivo Excel", type=["xlsx"])
 
 if uploaded_file:
@@ -70,12 +76,14 @@ if uploaded_file:
         st.markdown("### Datos cargados:")
         st.dataframe(datos.head())
 
-        resumen_variacion = analizar_variacion(datos)
+        # Resumen de variaciones por clase
+        resumen_clases = analizar_clases(datos)
         st.markdown("### Resumen de variaciones por clase:")
-        st.dataframe(resumen_variacion)
+        st.dataframe(resumen_clases)
 
+        # Generar informe
         if st.button("Generar Informe"):
             with st.spinner("Generando informe..."):
-                informe = generar_informe(resumen_variacion)
+                informe = generar_informe(resumen_clases)
                 st.markdown("### Informe generado:")
                 st.json(informe)

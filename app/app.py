@@ -1,11 +1,11 @@
 import pandas as pd
 import streamlit as st
+import json
 from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
-import json
 
-# Inicializar LLM con Groq
+# Inicializar el modelo Groq
 llm = ChatGroq(
     model_name="llama-3.3-70b-versatile",
     temperature=0.7
@@ -16,7 +16,7 @@ def cargar_y_limpiar_datos(archivo):
     try:
         # Leer el archivo Excel desde la fila 8
         df = pd.read_excel(archivo, skiprows=7, usecols="A:K")
-
+        
         # Seleccionar solo columnas relevantes
         columnas_relevantes = ["Nivel", "Transaccional", "Código cuenta contable", "Nombre cuenta contable", 
                                "Identificación", "Saldo inicial", "Movimiento débito", "Movimiento crédito", "Saldo final"]
@@ -26,7 +26,7 @@ def cargar_y_limpiar_datos(archivo):
         columnas_a_convertir = ["Nivel", "Transaccional", "Código cuenta contable", "Nombre cuenta contable", "Identificación"]
         for columna in columnas_a_convertir:
             df[columna] = df[columna].astype(str)
-
+        
         # Asegurar que las columnas numéricas estén correctamente formateadas
         columnas_numericas = ["Saldo inicial", "Movimiento débito", "Movimiento crédito", "Saldo final"]
         for columna in columnas_numericas:
@@ -51,10 +51,11 @@ def analizar_clases(df):
 # Función para generar un informe con LangChain y Groq
 def generar_informe(resumen):
     resumen_texto = "Resumen de variación por clase:\n\n"
-    for index, row in resumen.iterrows():
+    for _, row in resumen.iterrows():
         resumen_texto += f"Clase: {row['Nombre cuenta contable']} (Código: {row['Código cuenta contable']})\n"
         resumen_texto += f"Saldo Inicial: {row['Saldo inicial']:.2f} | Saldo Final: {row['Saldo final']:.2f} | Variación: {row['Variación']:.2f}\n\n"
 
+    # Crear el prompt y definir el parser
     prompt = ChatPromptTemplate.from_messages([
         ("system", """Analiza la tabla proporcionada y genera un informe con las siguientes secciones:
         1. Resumen general de las variaciones.
@@ -72,16 +73,14 @@ def generar_informe(resumen):
         }
     })
 
+    # Crear la cadena y generar el resultado
     chain = prompt | llm | parser
 
     try:
-        result = chain.invoke({})
+        result = chain.invoke({"input": resumen_texto})
         return result
     except Exception as e:
         st.error(f"Error al generar el informe: {e}")
-        # Agregar depuración para registrar el texto bruto del LLM
-        raw_llm_output = chain.run_only_llm({})
-        st.error(f"Salida LLM sin procesar: {raw_llm_output}")
         return None
 
 # Interfaz con Streamlit

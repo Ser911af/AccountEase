@@ -43,7 +43,7 @@ def analizar_clases(df):
     resumen["Saldo inicial"] = resumen["Saldo inicial"].round(0).astype(int)
     resumen["Saldo final"] = resumen["Saldo final"].round(0).astype(int)
     resumen["Variación Total"] = resumen["Variación Total"].round(0).astype(int)
-    resumen["Variación %"] = resumen["Variación %"].round(2)
+    resumen["Variación %"] = resumen["Variación %"].round(0)
 
     return resumen
 

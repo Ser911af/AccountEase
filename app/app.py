@@ -47,16 +47,23 @@ def analizar_clases(df):
     resumen["Variación"] = resumen["Saldo final"] - resumen["Saldo inicial"]
     return resumen
 
-# Función para generar un informe con LangChain y Groq
+# Función para generar el informe con LangChain y Groq
 def generar_informe(resumen):
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", """Genera un informe detallado con base en la tabla de datos. Incluir:
-        1. Resumen general de las variaciones en el saldo.
-        2. Clases con las mayores variaciones.
-        3. Cualquier observación clave sobre patrones o tendencias."""),
-        ("user", f"Tabla de datos:\n{resumen.to_string(index=False)}")
-    ])
+    # Convertir el resumen a un formato de texto adecuado
+    resumen_texto = ""
+    for _, row in resumen.iterrows():
+        resumen_texto += f"Cuenta: {row['Nombre cuenta contable']}, Código: {row['Código cuenta contable']}, Saldo Inicial: {row['Saldo inicial']}, Saldo Final: {row['Saldo final']}, Variación: {row['Variación']}\n"
 
+    # Crear el prompt con el texto generado
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", """Analiza la tabla proporcionada y genera un informe con las siguientes secciones:
+        1. Resumen general de las variaciones.
+        2. Clases con mayores aumentos o disminuciones en el saldo.
+        3. Observaciones clave sobre patrones o tendencias."""),
+        ("user", f"Tabla de datos:\n{resumen_texto}")
+    ])
+    
+    # Configurar el analizador de salida
     parser = JsonOutputParser(pydantic_object={
         "type": "object",
         "properties": {
@@ -65,10 +72,14 @@ def generar_informe(resumen):
             "observaciones_clave": {"type": "string"}
         }
     })
-
+    
+    # Crear y ejecutar la cadena de procesamiento
     chain = prompt | llm | parser
     result = chain.invoke({})
+    
+    # Retornar el informe generado
     return result
+
 
 # Interfaz con Streamlit
 st.title("Análisis de Variaciones en Cuentas Contables")

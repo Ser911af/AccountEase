@@ -28,7 +28,7 @@ def cargar_y_limpiar_datos(archivo):
         st.error(f"Error al cargar y limpiar los datos: {e}")
         return None
 
-# Función para analizar variaciones por clase
+# Función para analizar variaciones por clase con formato ajustado
 def analizar_clases(df):
     clases = df[df["Nivel"] == "Clase"]
     resumen = (
@@ -38,6 +38,13 @@ def analizar_clases(df):
     )
     resumen["Variación Total"] = resumen["Saldo final"] - resumen["Saldo inicial"]
     resumen["Variación %"] = (resumen["Variación Total"] / resumen["Saldo inicial"].replace(0, pd.NA)) * 100
+
+    # Ajustar formato: sin decimales para los montos y 2 decimales para porcentajes
+    resumen["Saldo inicial"] = resumen["Saldo inicial"].round(0).astype(int)
+    resumen["Saldo final"] = resumen["Saldo final"].round(0).astype(int)
+    resumen["Variación Total"] = resumen["Variación Total"].round(0).astype(int)
+    resumen["Variación %"] = resumen["Variación %"].round(2)
+
     return resumen
 
 # Generar informe con Groq

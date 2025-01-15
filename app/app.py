@@ -37,13 +37,12 @@ def analizar_clases(df):
         .reset_index()
     )
     resumen["Variación Total"] = resumen["Saldo final"] - resumen["Saldo inicial"]
-    resumen["Variación %"] = (resumen["Variación Total"] / resumen["Saldo inicial"].replace(0, pd.NA)) * 100
+    resumen["Variación %"] = ((resumen["Variación Total"] / resumen["Saldo inicial"].replace(0, pd.NA)) * 100).round(0).astype(int)
 
-    # Ajustar formato: sin decimales para los montos y 2 decimales para porcentajes
+    # Ajustar formato: sin decimales para los montos y redondeo a enteros para porcentajes
     resumen["Saldo inicial"] = resumen["Saldo inicial"].round(0).astype(int)
     resumen["Saldo final"] = resumen["Saldo final"].round(0).astype(int)
     resumen["Variación Total"] = resumen["Variación Total"].round(0).astype(int)
-    resumen["Variación %"] = resumen["Variación %"].round(0)
 
     return resumen
 

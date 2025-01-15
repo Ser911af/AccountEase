@@ -10,21 +10,30 @@ llm = ChatGroq(
     temperature=0.7
 )
 
-# Función para cargar y preprocesar datos
-def cargar_datos(archivo):
+# Función para cargar y limpiar datos
+def cargar_y_limpiar_datos(archivo):
     try:
-        df = pd.read_excel(archivo, skiprows=7)
-        # Procesar columnas numéricas
-        for col in ["Saldo inicial", "Saldo final"]:
-            df[col] = (
-                df[col]
-                .replace({',': '', '.': ''}, regex=True)
-                .str.replace('.', '', regex=False)
-                .astype(float)
-            )
+        # Leer el archivo Excel desde la fila 8
+        df = pd.read_excel(archivo, skiprows=7, usecols="A:K")
+        
+        # Seleccionar solo columnas relevantes
+        columnas_relevantes = ["Nivel", "Transaccional", "Código cuenta contable", "Nombre cuenta contable", 
+                               "Identificación", "Saldo inicial", "Movimiento débito", "Movimiento crédito", "Saldo final"]
+        df = df[columnas_relevantes]
+
+        # Convertir columnas relevantes a strings donde aplique
+        columnas_a_convertir = ["Nivel", "Transaccional", "Código cuenta contable", "Nombre cuenta contable", "Identificación"]
+        for columna in columnas_a_convertir:
+            df[columna] = df[columna].astype(str)
+        
+        # Asegurar que las columnas numéricas estén correctamente formateadas
+        columnas_numericas = ["Saldo inicial", "Movimiento débito", "Movimiento crédito", "Saldo final"]
+        for columna in columnas_numericas:
+            df[columna] = pd.to_numeric(df[columna], errors="coerce")
+
         return df
     except Exception as e:
-        st.error(f"Error al cargar los datos: {e}")
+        st.error(f"Error al cargar y limpiar los datos: {e}")
         return None
 
 # Función para analizar variación por clase
@@ -71,9 +80,9 @@ st.title("Análisis de Variaciones en Clases Contables")
 uploaded_file = st.file_uploader("Sube tu archivo Excel", type=["xlsx"])
 
 if uploaded_file:
-    datos = cargar_datos(uploaded_file)
+    datos = cargar_y_limpiar_datos(uploaded_file)
     if datos is not None:
-        st.markdown("### Datos cargados:")
+        st.markdown("### Datos cargados y limpiados:")
         st.dataframe(datos.head())
 
         # Resumen de variaciones por clase
@@ -87,3 +96,4 @@ if uploaded_file:
                 informe = generar_informe(resumen_clases)
                 st.markdown("### Informe generado:")
                 st.json(informe)
+

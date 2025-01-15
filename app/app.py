@@ -10,7 +10,7 @@ llm = ChatGroq(
     temperature=0.7
 )
 
-# Función para cargar y limpiar datos
+# Función para cargar y limpiar los datos
 def cargar_y_limpiar_datos(archivo):
     try:
         # Leer el archivo Excel desde la fila 8
@@ -49,19 +49,14 @@ def analizar_clases(df):
 
 # Función para generar un informe con LangChain y Groq
 def generar_informe(resumen):
-    # Convertir el resumen a un formato de texto legible para el modelo
-    resumen_texto = resumen.to_string(index=False)
-
-    # Crear el prompt para LangChain
     prompt = ChatPromptTemplate.from_messages([
-        ("system", """Analiza la tabla proporcionada y genera un informe con las siguientes secciones:
-        1. Resumen general de las variaciones.
-        2. Clases con mayores aumentos o disminuciones en el saldo.
-        3. Observaciones clave sobre patrones o tendencias."""),
-        ("user", f"Tabla de datos:\n{resumen_texto}")
+        ("system", """Genera un informe detallado con base en la tabla de datos. Incluir:
+        1. Resumen general de las variaciones en el saldo.
+        2. Clases con las mayores variaciones.
+        3. Cualquier observación clave sobre patrones o tendencias."""),
+        ("user", f"Tabla de datos:\n{resumen.to_string(index=False)}")
     ])
-    
-    # Configurar el parser de JSON
+
     parser = JsonOutputParser(pydantic_object={
         "type": "object",
         "properties": {
@@ -70,38 +65,27 @@ def generar_informe(resumen):
             "observaciones_clave": {"type": "string"}
         }
     })
-    
-    # Crear la cadena con el LLM y el parser
+
     chain = prompt | llm | parser
-    
-    # Generar el resultado
-    try:
-        result = chain.invoke({})
-        return result
-    except Exception as e:
-        st.error(f"Error al generar el informe: {e}")
-        return None
+    result = chain.invoke({})
+    return result
 
 # Interfaz con Streamlit
-st.title("Análisis de Variaciones en Clases Contables")
+st.title("Análisis de Variaciones en Cuentas Contables")
 uploaded_file = st.file_uploader("Sube tu archivo Excel", type=["xlsx"])
 
 if uploaded_file:
     datos = cargar_y_limpiar_datos(uploaded_file)
     if datos is not None:
-        st.markdown("### Datos cargados y limpiados:")
+        st.markdown("### Datos cargados:")
         st.dataframe(datos.head())
 
-        # Resumen de variaciones por clase
-        resumen_clases = analizar_clases(datos)
+        resumen_variacion = analizar_clases(datos)
         st.markdown("### Resumen de variaciones por clase:")
-        st.dataframe(resumen_clases)
+        st.dataframe(resumen_variacion)
 
-        # Generar informe
         if st.button("Generar Informe"):
             with st.spinner("Generando informe..."):
-                informe = generar_informe(resumen_clases)
-                if informe:
-                    st.markdown("### Informe generado:")
-                    st.json(informe)
-
+                informe = generar_informe(resumen_variacion)
+                st.markdown("### Informe generado:")
+                st.json(informe)

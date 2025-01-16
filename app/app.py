@@ -47,19 +47,16 @@ def analizar_clases(df):
 
     return resumen
 # Función para analizar ponderación de subcuentas en la cuenta 1305 
+# Función para analizar ponderación de subcuentas en la cuenta 1305 
 def analizar_ponderacion_subcuentas(df):
-    """
-    Calcula el peso relativo de las subcuentas con código que empieza con '1305' 
-    en relación al saldo final de la cuenta principal '1305'.
+    # Filtrar las subcuentas con código que empiece con 1305
+    subcuentas = df[df["Código cuenta contable"].str.startswith("1305")]
+    
+    # Encontrar el saldo finall de la cuenta principal 1305
+    cuenta_principal = df[df["Código cuenta contable"] == "1305"]
+    saldo_final_cuenta_principal = cuenta_principal["Saldo final"].sum()
 
-    Args:
-        df (pd.DataFrame): DataFrame con las columnas 'Código cuenta contable' y 'Saldo final'.
-
-    Returns:
-        pd.DataFrame: DataFrame con las subcuentas y sus pesos relativos.
-    """
-    # Filtrar subcuentas de la cuenta principal '1305'
-    subcuentas = df[df["Código cuenta contable"].str.startswith("1305")].copy()
+    return subcuentas[["Código cuenta contable", "Nombre tercero", "Saldo final"]]
 
    
 # Generar informe con Groq (incluyendo el análisis de ponderación de subcuentas)

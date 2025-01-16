@@ -96,7 +96,7 @@ def generar_informe(resumen_variacion, ponderacion_subcuentas):
             f"Variaciones por clase:\n{resumen_variacion_datos}\n\n"
             f"Ponderación de subcuentas en la cuenta 1305:\n{ponderacion_subcuentas_datos}\n\n"
             "Tu tarea es generar un informe que destaque lo siguiente:\n"
-            "1. Resumen general de las variaciones totales y porcentuales de las clases.\n"
+            "1. Resumen general de las variaciones totales y porcentuales de las clases, que son independientes de las ponderaciones, y se llama analisis de variacion de cuentas principales.\n"
             "2. Ponderación de las subcuentas más importantes dentro de la cuenta 1305.\n"
             "3. El nombre de la cuenta es clientes comerciales(1305) y el grupo al que pertenece es Deudores comerciales y otras cuentas por cobrar(13).\n"
         )

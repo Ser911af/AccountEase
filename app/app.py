@@ -47,13 +47,36 @@ def analizar_clases(df):
 
     return resumen
 # Función para analizar ponderación de subcuentas en la cuenta 1305 
-# Función para analizar ponderación de subcuentas en la cuenta 1305 
 def analizar_ponderacion_subcuentas(df):
+    """
+    Analiza la ponderación de las subcuentas dentro de la cuenta principal 1305.
+    Redondea los valores numéricos y agrega el porcentaje relativo.
+
+    Args:
+        df (DataFrame): El DataFrame con los datos contables.
+
+    Returns:
+        DataFrame: Tabla con las subcuentas, saldo final redondeado y porcentaje de contribución.
+    """
     # Filtrar las subcuentas con código que empiece con 1305
-    subcuentas = df[df["Código cuenta contable"].str.startswith("1305")]
-
-    return subcuentas[["Código cuenta contable", "Nombre tercero", "Saldo final"]]
-
+    subcuentas = df[df["Código cuenta contable"].str.startswith("1305")].copy()
+    
+    # Identificar el saldo final de la cuenta principal (primera fila filtrada)
+    saldo_final_principal = subcuentas.iloc[0]["Saldo final"]
+    
+    # Calcular el porcentaje relativo de cada subcuenta respecto a la cuenta principal
+    subcuentas["Porcentaje contribución"] = (
+        subcuentas["Saldo final"] / saldo_final_principal * 100
+    )
+    
+    # Redondear los valores numéricos
+    subcuentas["Saldo final"] = subcuentas["Saldo final"].round(0)
+    subcuentas["Porcentaje contribución"] = subcuentas["Porcentaje contribución"].round(2)
+    
+    # Seleccionar las columnas relevantes
+    resultado = subcuentas[["Código cuenta contable", "Nombre tercero", "Saldo final", "Porcentaje contribución"]]
+    
+    return resultado
    
 # Generar informe con Groq (incluyendo el análisis de ponderación de subcuentas)
 def generar_informe(resumen_variacion, ponderacion_subcuentas):

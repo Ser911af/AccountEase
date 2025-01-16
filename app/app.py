@@ -56,7 +56,7 @@ def analizar_ponderacion_subcuentas(df):
     saldo_inicial_cuenta_principal = cuenta_principal["Saldo final"].sum()
 
     # Calcular el peso relativo de cada subcuenta
-    subcuentas["Peso relativo"] = (subcuentas["Saldo final"] / saldo_inicial_cuenta_principal) * 100
+    subcuentas["Peso relativo"] = (subcuentas["Saldo final"] / saldo_inicial_cuenta_principal) 
 
     # Redondear el peso relativo
     subcuentas["Peso relativo"] = subcuentas["Peso relativo"].round(2)

@@ -98,7 +98,7 @@ def generar_informe(resumen_variacion, ponderacion_subcuentas):
             "Tu tarea es generar un informe que destaque lo siguiente:\n"
             "1. Resumen general de las variaciones totales y porcentuales de las clases.\n"
             "2. Ponderación de las subcuentas más importantes dentro de la cuenta 1305.\n"
-            "3. Análisis de cualquier tendencia destacada o desviación significativa.\n"
+            "3. El nombre de la cuenta es clientes comerciales(1305) y el grupo al que pertenece es Deudores comerciales y otras cuentas por cobrar(13).\n"
         )
 
         with st.spinner("Generando el informe, por favor espera..."):

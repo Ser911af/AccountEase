@@ -46,59 +46,24 @@ def analizar_clases(df):
     resumen["Variación Total"] = resumen["Variación Total"].round(0).astype(int)
 
     return resumen
-# Función para analizar ponderación de subcuentas de clientes comerciales (basado en saldo final)
-def analizar_ponderacion_subcuentas(df):
-    # Depuración: Verificar si hay datos en la columna 'Código cuenta contable'
-    st.write("Verificando datos en la columna 'Código cuenta contable':")
-    st.write(df["Código cuenta contable"].unique())
-
-    # Filtrar las subcuentas con código que empiece con 1305 (clientes comerciales)
-    subcuentas = df[df["Código cuenta contable"].str.startswith("1305")]
-    
-    # Depuración: Verificar los datos de las subcuentas
-    st.write("Datos de las subcuentas:")
-    st.write(subcuentas.head())
-
-    # Encontrar el saldo final de la cuenta principal 1305
+# Función para obtener el valor de saldo final de la cuenta 1305
+def obtener_saldo_cuenta_principal(df):
+    # Filtrar la cuenta principal 1305
     cuenta_principal = df[df["Código cuenta contable"] == "1305"]
-    
-    # Depuración: Verificar si encontramos la cuenta principal 1305
-    st.write("Datos de la cuenta principal 1305:")
-    st.write(cuenta_principal)
 
-    # Asegurarnos de que hemos encontrado la cuenta principal
+    # Verificar si se encuentra la cuenta 1305
     if cuenta_principal.empty:
         st.error("No se ha encontrado la cuenta principal 1305. Verifica los datos.")
         return pd.DataFrame()  # Retornamos una tabla vacía si no se encuentra la cuenta principal
 
-    saldo_final_cuenta_principal = cuenta_principal["Saldo final"].sum()
+    # Extraer los datos relevantes: código de cuenta, nombre cuenta contable y saldo final
+    resultado = cuenta_principal[["Código cuenta contable", "Nombre cuenta contable", "Saldo final"]]
 
-    # Verificar que el saldo final de la cuenta principal no sea cero
-    if saldo_final_cuenta_principal == 0:
-        st.warning("El saldo final de la cuenta principal 1305 es 0, lo que resultará en cálculos incorrectos para las subcuentas.")
-        return pd.DataFrame()  # Retornamos una tabla vacía si el saldo final es 0
+    # Mostrar el resultado en la interfaz de Streamlit
+    st.write("Datos de la cuenta principal 1305:")
+    st.write(resultado)
 
-    # Calcular el peso relativo de cada subcuenta basado en el saldo final
-    subcuentas["Peso relativo"] = (subcuentas["Saldo final"] / saldo_final_cuenta_principal) * 100
-
-    # Redondear el peso relativo a dos decimales
-    subcuentas["Peso relativo"] = subcuentas["Peso relativo"].round(2)
-
-    # Crear la tabla de ponderación que incluirá código de cuenta y nombre de terceros
-    tabla_ponderacion = subcuentas[["Código cuenta contable", "Identificación", "Saldo final", "Peso relativo"]]
-
-    # Agregar una fila que resuma el total de la cuenta principal 1305
-    resumen_principal = pd.DataFrame({
-        "Código cuenta contable": ["1305"],
-        "Identificación": ["Cuenta Principal 1305"],
-        "Saldo final": [saldo_final_cuenta_principal],
-        "Peso relativo": [100.00]  # El peso relativo de la cuenta principal es siempre 100%
-    })
-
-    # Concatenar la tabla de subcuentas con el resumen de la cuenta principal
-    tabla_ponderacion = pd.concat([tabla_ponderacion, resumen_principal], ignore_index=True)
-
-    return tabla_ponderacion
+    return resultado
 
 # Generar informe con Groq (incluyendo el análisis de ponderación de subcuentas)
 def generar_informe(resumen_variacion, ponderacion_subcuentas):

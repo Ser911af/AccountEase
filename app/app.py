@@ -10,7 +10,7 @@ def cargar_y_limpiar_datos(archivo):
         
         # Seleccionar solo columnas relevantes
         columnas_relevantes = ["Nivel", "Transaccional", "Código cuenta contable", "Nombre cuenta contable", 
-                               "Identificación", "Saldo inicial", "Movimiento débito", "Movimiento crédito", "Saldo final"]
+                               "Identificación", "Nombre tercero", "Saldo inicial", "Movimiento débito", "Movimiento crédito", "Saldo final"]
         df = df[columnas_relevantes]
 
         # Convertir columnas relevantes a strings donde aplique
@@ -67,7 +67,7 @@ def analizar_ponderacion_subcuentas(df):
     # Agregar una fila que resuma el total de la cuenta principal 1305
     resumen_principal = pd.DataFrame({
         "Código cuenta contable": ["1305"],
-        "Nombre cuenta contable": ["Cuenta Principal 1305"],
+        "Nombre tercero": ["Cuenta Principal 1305"],
         "Saldo final": [saldo_final_cuenta_principal],
         "Peso relativo": [100.00]  # El peso relativo de la cuenta principal es siempre 100%
     })

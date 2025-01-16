@@ -46,17 +46,22 @@ def analizar_clases(df):
     resumen["Variación Total"] = resumen["Variación Total"].round(0).astype(int)
 
     return resumen
-# Función para analizar la ponderación de subcuentas en la cuenta 1305
 def analizar_ponderacion_subcuentas(df):
-    # Filtrar las subcuentas con código que empiece con 1305 (clientes comerciales) 
+    # Limpiar y normalizar los datos
+    df["Código cuenta contable"] = df["Código cuenta contable"].str.strip()
+    df["Saldo final"] = pd.to_numeric(df["Saldo final"], errors="coerce")
+
+    # Filtrar las subcuentas con código que empiece con 1305
     subcuentas = df[df["Código cuenta contable"].str.startswith("1305")]
 
-    # Eliminar subcuentas con saldo final cero
-    subcuentas = subcuentas[subcuentas["Saldo final"] != 0]
+    # Eliminar subcuentas con saldo final cero o valores nulos
+    subcuentas = subcuentas[subcuentas["Saldo final"].notna() & (subcuentas["Saldo final"] != 0)]
 
     # Obtener el saldo final de la cuenta principal 1305
     cuenta_principal = df[df["Código cuenta contable"] == "1305"]
+    st.write("Datos de la cuenta principal 1305:", cuenta_principal)  # Depuración
     saldo_final_cuenta_principal = cuenta_principal["Saldo final"].sum()
+    st.write("Saldo final de la cuenta principal 1305:", saldo_final_cuenta_principal)  # Depuración
 
     # Verificar que el saldo de la cuenta principal no sea cero
     if saldo_final_cuenta_principal == 0:

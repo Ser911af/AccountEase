@@ -75,7 +75,7 @@ def analizar_ponderacion_subcuentas(df):
     
     # Seleccionar las columnas relevantes
     resultado = subcuentas[["Código cuenta contable", "Nombre tercero", "Saldo final", "Porcentaje contribución"]]
-    
+    resultado = resultado.sort_values(by="Porcentaje contribución", ascending=False)
     return resultado
    
 # Generar informe con Groq (incluyendo el análisis de ponderación de subcuentas)

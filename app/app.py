@@ -46,17 +46,34 @@ def analizar_clases(df):
     resumen["Variación Total"] = resumen["Variación Total"].round(0).astype(int)
 
     return resumen
-
 # Función para analizar ponderación de subcuentas de clientes comerciales (basado en saldo final)
 def analizar_ponderacion_subcuentas(df):
+    # Depuración: Verificar si hay datos en la columna 'Código cuenta contable'
+    st.write("Verificando datos en la columna 'Código cuenta contable':")
+    st.write(df["Código cuenta contable"].unique())
+
     # Filtrar las subcuentas con código que empiece con 1305 (clientes comerciales)
     subcuentas = df[df["Código cuenta contable"].str.startswith("1305")]
     
+    # Depuración: Verificar los datos de las subcuentas
+    st.write("Datos de las subcuentas:")
+    st.write(subcuentas.head())
+
     # Encontrar el saldo final de la cuenta principal 1305
     cuenta_principal = df[df["Código cuenta contable"] == "1305"]
+    
+    # Depuración: Verificar si encontramos la cuenta principal 1305
+    st.write("Datos de la cuenta principal 1305:")
+    st.write(cuenta_principal)
+
+    # Asegurarnos de que hemos encontrado la cuenta principal
+    if cuenta_principal.empty:
+        st.error("No se ha encontrado la cuenta principal 1305. Verifica los datos.")
+        return pd.DataFrame()  # Retornamos una tabla vacía si no se encuentra la cuenta principal
+
     saldo_final_cuenta_principal = cuenta_principal["Saldo final"].sum()
 
-    # Verificar que la cuenta principal tenga saldo final mayor a 0 para evitar división por cero
+    # Verificar que el saldo final de la cuenta principal no sea cero
     if saldo_final_cuenta_principal == 0:
         st.warning("El saldo final de la cuenta principal 1305 es 0, lo que resultará en cálculos incorrectos para las subcuentas.")
         return pd.DataFrame()  # Retornamos una tabla vacía si el saldo final es 0
@@ -82,7 +99,6 @@ def analizar_ponderacion_subcuentas(df):
     tabla_ponderacion = pd.concat([tabla_ponderacion, resumen_principal], ignore_index=True)
 
     return tabla_ponderacion
-
 
 # Generar informe con Groq (incluyendo el análisis de ponderación de subcuentas)
 def generar_informe(resumen_variacion, ponderacion_subcuentas):

@@ -18,14 +18,18 @@ def cargar_y_limpiar_datos(archivo):
         for columna in columnas_a_convertir:
             df[columna] = df[columna].astype(str)
         
-        # Asegurar que las columnas numéricas estén correctamente formateadas y sin decimales
-        columnas_numericas = ["Saldo inicial", "Movimiento débito", "Movimiento crédito", "Saldo final"]
-        for columna in columnas_numericas:
-            # Convertir a numérico, manejando errores con NaN, y redondear a 0 decimales
-            df[columna] = pd.to_numeric(df[columna], errors="coerce").round(0)
+       # Asegurar que las columnas numéricas estén correctamente formateadas y sin decimales
+       columnas_numericas = ["Saldo inicial", "Movimiento débito", "Movimiento crédito", "Saldo final"]
 
-            # Formatear las columnas numéricas con separador de miles y sin decimales
-            df[columna] = df[columna].apply(lambda x: f"{x:,.0f}" if pd.notnull(x) else "-")
+       for columna in columnas_numericas:
+    
+       # Convertir a numérico, manejando errores con NaN, y redondear a 0 decimales
+       df[columna] = pd.to_numeric(df[columna], errors="coerce").round(0)
+
+       # Formatear las columnas numéricas con separador de miles y sin decimales
+      for columna in columnas_numericas:
+      df[columna] = df[columna].apply(lambda x: f"{x:,.0f}" if pd.notnull(x) else "-")
+
 
         return df
     except Exception as e:
@@ -50,7 +54,6 @@ def analizar_clases(df):
     resumen["Variación Total"] = resumen["Variación Total"].round(0).astype(int)
 
     return resumen
-
 # Función para analizar ponderación de subcuentas en la cuenta 1305 
 def analizar_ponderacion_subcuentas(df):
     """
@@ -145,4 +148,3 @@ if uploaded_file:
         # Botón para generar el informe
         if st.button("Generar Informe"):
             generar_informe(resumen_variacion, ponderacion_subcuentas)
-

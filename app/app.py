@@ -51,10 +51,6 @@ def analizar_clases(df):
 def analizar_ponderacion_subcuentas(df):
     # Filtrar las subcuentas con código que empiece con 1305
     subcuentas = df[df["Código cuenta contable"].str.startswith("1305")]
-    
-    # Encontrar el saldo finall de la cuenta principal 1305
-    cuenta_principal = df[df["Código cuenta contable"] == "1305"]
-    saldo_final_cuenta_principal = cuenta_principal["Saldo final"].sum()
 
     return subcuentas[["Código cuenta contable", "Nombre tercero", "Saldo final"]]
 

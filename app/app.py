@@ -46,7 +46,7 @@ def analizar_clases(df):
     resumen["Variación Total"] = resumen["Variación Total"].round(0).astype(int)
 
     return resumen
-# Función para analizar ponderación de subcuentas en la cuenta 1305
+# Función para analizar ponderación de subcuentas en la cuenta 1305 
 def analizar_ponderacion_subcuentas(df):
     # Filtrar las subcuentas con código que empiece con 1305
     subcuentas = df[df["Código cuenta contable"].str.startswith("1305")]
@@ -56,7 +56,7 @@ def analizar_ponderacion_subcuentas(df):
     saldo_final_cuenta_principal = cuenta_principal["Saldo final"].sum()
 
     # Calcular el peso relativo de cada subcuenta
-     subcuentas["Peso relativo"] = (subcuentas["Saldo final"] / saldo_final_cuenta_principal) 
+    subcuentas["Peso relativo"] = (subcuentas["Saldo final"] / saldo_final_cuenta_principal) 
 
     # Redondear el peso relativo
     subcuentas["Peso relativo"] = subcuentas["Peso relativo"].round(2)

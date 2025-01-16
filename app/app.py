@@ -62,7 +62,7 @@ def analizar_ponderacion_subcuentas(df):
     subcuentas["Peso relativo"] = subcuentas["Peso relativo"].round(2)
 
     # Crear la tabla de ponderación que incluirá código de cuenta y nombre de cuenta
-    tabla_ponderacion = subcuentas[["Código cuenta contable", "Nombre cuenta contable", "Saldo final", "Peso relativo"]]
+    tabla_ponderacion = subcuentas[["Código cuenta contable", "Nombre tercero", "Saldo final", "Peso relativo"]]
 
     # Agregar una fila que resuma el total de la cuenta principal 1305
     resumen_principal = pd.DataFrame({

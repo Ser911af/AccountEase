@@ -47,22 +47,36 @@ def analizar_clases(df):
 
     return resumen
 
-# Función para analizar ponderación de subcuentas en la cuenta 1305
+# Función para analizar ponderación de subcuentas de clientes comerciales (basado en saldo final)
 def analizar_ponderacion_subcuentas(df):
-    # Filtrar las subcuentas con código que empiece con 1305
+    # Filtrar las subcuentas con código que empiece con 1305 (clientes comerciales)
     subcuentas = df[df["Código cuenta contable"].str.startswith("1305")]
     
-    # Encontrar el saldo inicial de la cuenta principal 1305
+    # Encontrar el saldo final de la cuenta principal 1305
     cuenta_principal = df[df["Código cuenta contable"] == "1305"]
-    saldo_inicial_cuenta_principal = cuenta_principal["Saldo inicial"].sum()
+    saldo_final_cuenta_principal = cuenta_principal["Saldo final"].sum()
 
-    # Calcular el peso relativo de cada subcuenta
-    subcuentas["Peso relativo"] = (subcuentas["Saldo inicial"] / saldo_inicial_cuenta_principal) * 100
+    # Calcular el peso relativo de cada subcuenta basado en el saldo final
+    subcuentas["Peso relativo"] = (subcuentas["Saldo final"] / saldo_final_cuenta_principal) * 100
 
-    # Redondear el peso relativo
+    # Redondear el peso relativo a dos decimales
     subcuentas["Peso relativo"] = subcuentas["Peso relativo"].round(2)
 
-    return subcuentas[["Código cuenta contable", "Nombre cuenta contable", "Saldo inicial", "Peso relativo"]]
+    # Crear la tabla de ponderación que incluirá código de cuenta y nombre de cuenta
+    tabla_ponderacion = subcuentas[["Código cuenta contable", "Nombre cuenta contable", "Saldo final", "Peso relativo"]]
+
+    # Agregar una fila que resuma el total de la cuenta principal 1305
+    resumen_principal = pd.DataFrame({
+        "Código cuenta contable": ["1305"],
+        "Nombre cuenta contable": ["Cuenta Principal 1305"],
+        "Saldo final": [saldo_final_cuenta_principal],
+        "Peso relativo": [100.00]  # El peso relativo de la cuenta principal es siempre 100%
+    })
+
+    # Concatenar la tabla de subcuentas con el resumen de la cuenta principal
+    tabla_ponderacion = pd.concat([tabla_ponderacion, resumen_principal], ignore_index=True)
+
+    return tabla_ponderacion
 
 # Generar informe con Groq (incluyendo el análisis de ponderación de subcuentas)
 def generar_informe(resumen_variacion, ponderacion_subcuentas):

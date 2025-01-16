@@ -18,7 +18,7 @@ def cargar_y_limpiar_datos(archivo):
         for columna in columnas_a_convertir:
             df[columna] = df[columna].astype(str)
         
-        # Asegurar que las columnas numéricas estén correctamente formateadas
+       # Asegurar que las columnas numéricas estén correctamente formateadas
         columnas_numericas = ["Saldo inicial", "Movimiento débito", "Movimiento crédito", "Saldo final"]
         for columna in columnas_numericas:
             df[columna] = pd.to_numeric(df[columna], errors="coerce")
@@ -46,7 +46,6 @@ def analizar_clases(df):
     resumen["Variación Total"] = resumen["Variación Total"].round(0).astype(int)
 
     return resumen
-
 # Función para analizar ponderación de subcuentas en la cuenta 1305 
 def analizar_ponderacion_subcuentas(df):
     """
@@ -78,42 +77,9 @@ def analizar_ponderacion_subcuentas(df):
     resultado = subcuentas[["Código cuenta contable", "Nombre tercero", "Saldo final", "Porcentaje contribución"]]
     resultado = resultado.sort_values(by="Porcentaje contribución", ascending=False)
     return resultado
-
-# Función para analizar ponderación de subcuentas en la cuenta 133005 A proveedores
-def analizar_ponderacion_subcuentas_proveedores(df):
-    """
-    Analiza la ponderación de las subcuentas dentro de la cuenta 133005 A proveedores.
-    Redondea los valores numéricos y agrega el porcentaje relativo.
-
-    Args:
-        df (DataFrame): El DataFrame con los datos contables.
-
-    Returns:
-        DataFrame: Tabla con las subcuentas, saldo final redondeado y porcentaje de contribución.
-    """
-    # Filtrar las subcuentas con código que empiece con 133005
-    subcuentas_proveedores = df[df["Código cuenta contable"].str.startswith("133005")].copy()
-    
-    # Identificar el saldo final de la cuenta principal (primera fila filtrada)
-    saldo_final_proveedores = subcuentas_proveedores.iloc[0]["Saldo final"]
-    
-    # Calcular el porcentaje relativo de cada subcuenta respecto a la cuenta principal
-    subcuentas_proveedores["Porcentaje contribución"] = (
-        subcuentas_proveedores["Saldo final"] / saldo_final_proveedores * 100
-    )
-    
-    # Redondear los valores numéricos
-    subcuentas_proveedores["Saldo final"] = subcuentas_proveedores["Saldo final"].round(0)
-    subcuentas_proveedores["Porcentaje contribución"] = subcuentas_proveedores["Porcentaje contribución"].round(2)
-    
-    # Seleccionar las columnas relevantes
-    resultado_proveedores = subcuentas_proveedores[["Código cuenta contable", "Nombre tercero", "Saldo final", "Porcentaje contribución"]]
-    resultado_proveedores = resultado_proveedores.sort_values(by="Porcentaje contribución", ascending=False)
-    
-    return resultado_proveedores
-
+   
 # Generar informe con Groq (incluyendo el análisis de ponderación de subcuentas)
-def generar_informe(resumen_variacion, ponderacion_subcuentas_1305, ponderacion_subcuentas_proveedores):
+def generar_informe(resumen_variacion, ponderacion_subcuentas):
     st.markdown("### Informe generado automáticamente:")
     try:
         client = Groq()
@@ -122,19 +88,17 @@ def generar_informe(resumen_variacion, ponderacion_subcuentas_1305, ponderacion_
         resumen_variacion_datos = resumen_variacion.to_string(index=False)
 
         # Resumen de ponderación de subcuentas
-        ponderacion_subcuentas_1305_datos = ponderacion_subcuentas_1305.to_string(index=False)
-        ponderacion_subcuentas_proveedores_datos = ponderacion_subcuentas_proveedores.to_string(index=False)
+        ponderacion_subcuentas_datos = ponderacion_subcuentas.to_string(index=False)
 
         # Crear el prompt con los análisis de variaciones y ponderación
         prompt = (
-            f"Eres un asistente financiero. Aquí tienes un resumen de las variaciones por clase y la ponderación de las subcuentas en la cuenta 1305 y 133005 A proveedores:\n"
+            f"Eres un asistente financiero. Aquí tienes un resumen de las variaciones por clase y la ponderación de las subcuentas en la cuenta 1305:\n"
             f"Variaciones por clase:\n{resumen_variacion_datos}\n\n"
-            f"Ponderación de subcuentas en la cuenta 1305:\n{ponderacion_subcuentas_1305_datos}\n\n"
-            f"Ponderación de subcuentas en la cuenta 133005 A proveedores:\n{ponderacion_subcuentas_proveedores_datos}\n\n"
+            f"Ponderación de subcuentas en la cuenta 1305:\n{ponderacion_subcuentas_datos}\n\n"
             "Tu tarea es generar un informe que destaque lo siguiente:\n"
             "1. Resumen general de las variaciones totales y porcentuales de las clases, que son independientes de las ponderaciones, y se llama analisis de variacion de cuentas principales.\n"
-            "2. Ponderación de las subcuentas más importantes dentro de las cuentas 1305 y 133005 A proveedores.\n"
-            "3. El nombre de la cuenta 1305 es clientes comerciales y la 133005 A proveedores es para los proveedores.\n"
+            "2. Ponderación de las subcuentas más importantes dentro de la cuenta 1305.\n"
+            "3. El nombre de la cuenta es clientes comerciales(1305) y el grupo al que pertenece es Deudores comerciales y otras cuentas por cobrar(13).\n"
         )
 
         with st.spinner("Generando el informe, por favor espera..."):
@@ -169,15 +133,10 @@ if uploaded_file:
         st.dataframe(resumen_variacion)
 
         # Análisis de ponderación de subcuentas en la cuenta 1305
-        ponderacion_subcuentas_1305 = analizar_ponderacion_subcuentas(datos)
+        ponderacion_subcuentas = analizar_ponderacion_subcuentas(datos)
         st.markdown("### Ponderación de subcuentas en la cuenta 1305:")
-        st.dataframe(ponderacion_subcuentas_1305)
-
-        # Análisis de ponderación de subcuentas en la cuenta 133005 A proveedores
-        ponderacion_subcuentas_proveedores = analizar_ponderacion_subcuentas_proveedores(datos)
-        st.markdown("### Ponderación de subcuentas en la cuenta 133005 A proveedores:")
-        st.dataframe(ponderacion_subcuentas_proveedores)
+        st.dataframe(ponderacion_subcuentas)
 
         # Botón para generar el informe
         if st.button("Generar Informe"):
-            generar_informe(resumen_variacion, ponderacion_subcuentas_1305, ponderacion_subcuentas_proveedores)
+            generar_informe(resumen_variacion, ponderacion_subcuentas)

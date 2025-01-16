@@ -19,15 +19,16 @@ def cargar_y_limpiar_datos(archivo):
             df[columna] = df[columna].astype(str)
         
        # Asegurar que las columnas numéricas estén correctamente formateadas y sin decimales
-columnas_numericas = ["Saldo inicial", "Movimiento débito", "Movimiento crédito", "Saldo final"]
+       columnas_numericas = ["Saldo inicial", "Movimiento débito", "Movimiento crédito", "Saldo final"]
 
-for columna in columnas_numericas:
-    # Convertir a numérico, manejando errores con NaN, y redondear a 0 decimales
-    df[columna] = pd.to_numeric(df[columna], errors="coerce").round(0)
+       for columna in columnas_numericas:
+    
+       # Convertir a numérico, manejando errores con NaN, y redondear a 0 decimales
+       df[columna] = pd.to_numeric(df[columna], errors="coerce").round(0)
 
-# Formatear las columnas numéricas con separador de miles y sin decimales
-for columna in columnas_numericas:
-    df[columna] = df[columna].apply(lambda x: f"{x:,.0f}" if pd.notnull(x) else "-")
+       # Formatear las columnas numéricas con separador de miles y sin decimales
+      for columna in columnas_numericas:
+      df[columna] = df[columna].apply(lambda x: f"{x:,.0f}" if pd.notnull(x) else "-")
 
 
         return df

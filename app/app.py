@@ -53,15 +53,15 @@ def analizar_ponderacion_subcuentas(df):
     
     # Encontrar el saldo inicial de la cuenta principal 1305
     cuenta_principal = df[df["Código cuenta contable"] == "1305"]
-    saldo_inicial_cuenta_principal = cuenta_principal["Saldo inicial"].sum()
+    saldo_inicial_cuenta_principal = cuenta_principal["Saldo final"].sum()
 
     # Calcular el peso relativo de cada subcuenta
-    subcuentas["Peso relativo"] = (subcuentas["Saldo inicial"] / saldo_inicial_cuenta_principal) * 100
+    subcuentas["Peso relativo"] = (subcuentas["Saldo final"] / saldo_inicial_cuenta_principal) * 100
 
     # Redondear el peso relativo
     subcuentas["Peso relativo"] = subcuentas["Peso relativo"].round(2)
 
-    return subcuentas[["Código cuenta contable", "Nombre cuenta contable", "Saldo inicial", "Peso relativo"]]
+    return subcuentas[["Código cuenta contable", "Nombre tercero", "Saldo final", "Peso relativo"]]
     
 # Generar informe con Groq (incluyendo el análisis de ponderación de subcuentas)
 def generar_informe(resumen_variacion, ponderacion_subcuentas):

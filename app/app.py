@@ -98,8 +98,8 @@ def generar_informe(resumen_variacion, ponderacion_subcuentas):
         "Quiero que redactes un informe con un estilo humano, cercano y fácil de leer, evitando tecnicismos innecesarios. El informe debe incluir lo siguiente:\n\n"
         "1. Un resumen general que explique las variaciones totales y porcentuales de las clases, presentando un análisis global y comprensible de las cuentas principales.\n"
         "2. Un análisis de las subcuentas más importantes dentro de la cuenta 1305, destacando su impacto en el total de manera clara y amigable.\n"
-        "3. Información contextual para el lector: la cuenta 1305 se llama 'Clientes comerciales' y pertenece al grupo 'Deudores comerciales y otras cuentas por cobrar (13)'.\n\n"
-        "Es importante que el informe transmita profesionalismo, pero que también sea cálido y accesible para cualquier persona que lo lea. ¡Gracias por tu ayuda!"
+        "3. Información contextual para el lector: la cuenta 1305 se llama 'Clientes comerciales' y pertenece al grupo 'Deudores comerciales y otras cuentas por cobrar (13)'en el informe haremos referencia a esta cuenta por su nombre y no por el numero.\n\n"
+        "Es importante que el informe transmita profesionalismo!"
                )
 
 

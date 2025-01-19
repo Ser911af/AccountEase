@@ -2,35 +2,6 @@ import pandas as pd
 import streamlit as st
 from groq import Groq  # Asegúrate de que esta librería esté instalada
 
-# Nueva función para leer la información de la empresa
-def leer_informacion_empresa(archivo):
-    """
-    Lee la información de la empresa desde las primeras 7 filas del archivo Excel.
-
-    Args:
-        archivo: El archivo Excel cargado.
-
-    Returns:
-        dict: Un diccionario con la información de la empresa, incluyendo nombre y periodo.
-    """
-    try:
-        # Leer las primeras 7 filas del archivo Excel sin encabezados
-        info_empresa_df = pd.read_excel(archivo, nrows=7, header=None)
-
-        # Extraer información clave
-        informacion = {
-            "Título": info_empresa_df.iloc[0, 0],  # Primera fila, columna 1
-            "Nombre Empresa": info_empresa_df.iloc[1, 0],  # Segunda fila, columna 1
-            "NIT": info_empresa_df.iloc[2, 0],  # Tercera fila, columna 1
-            "Periodo": info_empresa_df.iloc[3, 0],  # Cuarta fila, columna 1
-        }
-
-        return informacion
-    except Exception as e:
-        # Manejar errores al leer la información
-        st.error(f"Error al leer la información de la empresa: {e}")
-        return None
-
 # Función para cargar y limpiar datos
 def cargar_y_limpiar_datos(archivo):
     try:
@@ -75,41 +46,59 @@ def analizar_clases(df):
     resumen["Variación Total"] = resumen["Variación Total"].round(0).astype(int)
 
     return resumen
-
 # Función para analizar ponderación de subcuentas en la cuenta 1305 
 def analizar_ponderacion_subcuentas(df):
+    """
+    Analiza la ponderación de las subcuentas dentro de la cuenta principal 1305.
+    Redondea los valores numéricos y agrega el porcentaje relativo.
+
+    Args:
+        df (DataFrame): El DataFrame con los datos contables.
+
+    Returns:
+        DataFrame: Tabla con las subcuentas, saldo final redondeado y porcentaje de contribución.
+    """
+    # Filtrar las subcuentas con código que empiece con 1305
     subcuentas = df[df["Código cuenta contable"].str.startswith("1305")].copy()
+    
+    # Identificar el saldo final de la cuenta principal (primera fila filtrada)
     saldo_final_principal = subcuentas.iloc[0]["Saldo final"]
+    
+    # Calcular el porcentaje relativo de cada subcuenta respecto a la cuenta principal
     subcuentas["Porcentaje contribución"] = (
         subcuentas["Saldo final"] / saldo_final_principal * 100
     )
+    
+    # Redondear los valores numéricos
     subcuentas["Saldo final"] = subcuentas["Saldo final"].round(0)
     subcuentas["Porcentaje contribución"] = subcuentas["Porcentaje contribución"].round(2)
+    
+    # Seleccionar las columnas relevantes
     resultado = subcuentas[["Código cuenta contable", "Nombre tercero", "Saldo final", "Porcentaje contribución"]]
     resultado = resultado.sort_values(by="Porcentaje contribución", ascending=False)
     return resultado
    
-# Generar informe con Groq
-def generar_informe(resumen_variacion, ponderacion_subcuentas, info_empresa):
+# Generar informe con Groq (incluyendo el análisis de ponderación de subcuentas)
+def generar_informe(resumen_variacion, ponderacion_subcuentas):
     st.markdown("### Informe generado automáticamente:")
     try:
         client = Groq()
 
+        # Resumen de variaciones por clase
         resumen_variacion_datos = resumen_variacion.to_string(index=False)
+
+        # Resumen de ponderación de subcuentas
         ponderacion_subcuentas_datos = ponderacion_subcuentas.to_string(index=False)
 
-        nombre_empresa = info_empresa.get("Nombre Empresa", "Información no disponible")
-        periodo = info_empresa.get("Periodo", "Información no disponible")
-
+        # Crear el prompt con los análisis de variaciones y ponderación
         prompt = (
             f"Eres un asistente financiero. Aquí tienes un resumen de las variaciones por clase y la ponderación de las subcuentas en la cuenta 1305:\n"
-            f"Empresa: {nombre_empresa}\n"
-            f"Periodo: {periodo}\n\n"
             f"Variaciones por clase:\n{resumen_variacion_datos}\n\n"
             f"Ponderación de subcuentas en la cuenta 1305:\n{ponderacion_subcuentas_datos}\n\n"
             "Tu tarea es generar un informe que destaque lo siguiente:\n"
-            "1. Resumen general de las variaciones totales y porcentuales de las clases.\n"
+            "1. Resumen general de las variaciones totales y porcentuales de las clases, que son independientes de las ponderaciones, y se llama analisis de variacion de cuentas principales.\n"
             "2. Ponderación de las subcuentas más importantes dentro de la cuenta 1305.\n"
+            "3. El nombre de la cuenta es clientes comerciales(1305) y el grupo al que pertenece es Deudores comerciales y otras cuentas por cobrar(13).\n"
         )
 
         with st.spinner("Generando el informe, por favor espera..."):
@@ -133,7 +122,6 @@ st.title("Análisis de Variaciones en Cuentas Contables")
 uploaded_file = st.file_uploader("Sube tu archivo Excel", type=["xlsx"])
 
 if uploaded_file:
-    info_empresa = leer_informacion_empresa(uploaded_file)
     datos = cargar_y_limpiar_datos(uploaded_file)
     if datos is not None:
         st.markdown("### Datos cargados:")
@@ -151,4 +139,6 @@ if uploaded_file:
 
         # Botón para generar el informe
         if st.button("Generar Informe"):
-            generar_informe(resumen_variacion, ponderacion_subcuentas, info_empresa)
+            generar_informe(resumen_variacion, ponderacion_subcuentas)
+
+

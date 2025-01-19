@@ -92,14 +92,16 @@ def generar_informe(resumen_variacion, ponderacion_subcuentas):
 
         # Crear el prompt con los análisis de variaciones y ponderación
         prompt = (
-            f"Eres un asistente financiero. Aquí tienes un resumen de las variaciones por clase y la ponderación de las subcuentas en la cuenta 1305:\n"
-            f"Variaciones por clase:\n{resumen_variacion_datos}\n\n"
-            f"Ponderación de subcuentas en la cuenta 1305:\n{ponderacion_subcuentas_datos}\n\n"
-            "Tu tarea es generar un informe que destaque lo siguiente:\n"
-            "1. Resumen general de las variaciones totales y porcentuales de las clases, que son independientes de las ponderaciones, y se llama analisis de variacion de cuentas principales.\n"
-            "2. Ponderación de las subcuentas más importantes dentro de la cuenta 1305.\n"
-            "3. El nombre de la cuenta es clientes comerciales(1305) y el grupo al que pertenece es Deudores comerciales y otras cuentas por cobrar(13).\n"
-        )
+           f"Hola, eres un asistente financiero experto y necesito tu ayuda para analizar y redactar un informe basado en los datos que te proporcionaré. Aquí tienes un resumen de las variaciones por clase y la ponderación de las subcuentas dentro de la cuenta 1305:\n\n"
+          f"- **Variaciones por clase:**\n{resumen_variacion_datos}\n\n"
+          f"- **Ponderación de subcuentas en la cuenta 1305:**\n{ponderacion_subcuentas_datos}\n\n"
+        "Quiero que redactes un informe con un estilo humano, cercano y fácil de leer, evitando tecnicismos innecesarios. El informe debe incluir lo siguiente:\n\n"
+        "1. Un resumen general que explique las variaciones totales y porcentuales de las clases, presentando un análisis global y comprensible de las cuentas principales.\n"
+        "2. Un análisis de las subcuentas más importantes dentro de la cuenta 1305, destacando su impacto en el total de manera clara y amigable.\n"
+        "3. Información contextual para el lector: la cuenta 1305 se llama 'Clientes comerciales' y pertenece al grupo 'Deudores comerciales y otras cuentas por cobrar (13)'.\n\n"
+        "Es importante que el informe transmita profesionalismo, pero que también sea cálido y accesible para cualquier persona que lo lea. ¡Gracias por tu ayuda!"
+               )
+
 
         with st.spinner("Generando el informe, por favor espera..."):
             completion = client.chat.completions.create(
